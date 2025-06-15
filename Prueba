@@ -1,0 +1,70 @@
+// Estructura para una nota de una materia específica
+typedef struct {
+    char nombreMateria[50];
+    float nota;
+} NotaMateria;
+
+// Estructura para un alumno
+typedef struct {
+    char nombre[100];
+    char dni[15]; // Opcional, si se usa como identificador único
+    // Podrías tener un arreglo de NotaMateria si el número de materias es fijo
+    // o una lista dinámica de notas si es variable por alumno.
+    NotaMateria notas[MAX_MATERIAS]; // Suponiendo un número máximo de materias
+    int cantidadNotas;
+    float promedioGeneral; // Se calculará al agregar las notas
+} Alumno;
+
+
+// Nodo para la lista dinámica de alumnos
+typedef struct NodoAlumno {
+    Alumno datosAlumno;
+    struct NodoAlumno *siguiente;
+} NodoAlumno;
+
+// Puntero al inicio de la lista de alumnos
+NodoAlumno *listaAlumnos = NULL;
+
+
+// En tu función main o una función de inicialización:
+void inicializarSistema() {
+    listaAlumnos = cargarDatosDesdeArchivo(); // Cargar datos al inicio
+    // ...
+}
+
+// Cuando el usuario seleccione una opción del menú:
+void menuPrincipal() {
+    int opcion;
+    do {
+        // Mostrar menú (Registrar, Buscar, Mostrar mejores promedios, etc.)
+        printf("\n--- GESTION DE ESTUDIANTES Y NOTAS ---\n");
+        printf("1. Registrar Alumno y Notas\n");
+        printf("2. Buscar Alumno por Nombre\n");
+        printf("3. Buscar Alumno por DNI\n");
+        printf("4. Mostrar Mejores Promedios\n");
+        printf("5. Salir\n");
+        printf("Ingrese su opcion: ");
+        scanf("%d", &opcion);
+
+        switch(opcion) {
+            case 1:
+                // Lógica para registrar alumno y sus notas
+                break;
+            case 2:
+                // Lógica para buscar por nombre
+                break;
+            case 3:
+                // Lógica para buscar por DNI
+                break;
+            case 4:
+                // Lógica para mostrar los mejores promedios ordenados
+                break;
+            case 5:
+                guardarDatosEnArchivo(listaAlumnos); // Guardar datos antes de salir
+                // Liberar memoria de la lista dinámica
+                break;
+            default:
+                printf("Opcion invalida.\n");
+        }
+    } while (opcion != 5);
+}
