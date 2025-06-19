@@ -68,3 +68,40 @@ void menuPrincipal() {
         }
     } while (opcion != 5);
 }
+
+
+
+
+
+void mostrarmaterias()
+{
+	printf("Las materias que dispone son:\n1.Matemática\n2.Org.Empresarial\n3.Arq. y Sistemas Operativos\n4.Programacion\n");
+}
+
+void menu(int *opcion)
+{
+	printf("\n===== MENU =====\n");
+	printf("Ingrese una opcion (1-5)\n");
+	printf("1.Mostrar Materias\n2.Agregar o quitar Alumno\n3.Agregar o quitar Notas\n4.Mostrar por Pantalla\n5.Salir\n");
+	printf("===============\n");
+	scanf(" %d",opcion);
+	if (*opcion<1 || *opcion>5)
+	{
+		printf("Error. Ingrese un numero valido entre 1 y 5\n");
+		return menu(opcion);
+	}
+}
+int main()
+{
+    FILE *arch;
+    char nombre[100];
+    int opcion;
+    if ((arch = fopen(GDE, "w")) == NULL)
+        printf("No se pudo abrir el archivo");
+
+	printf("BIENVENIDO AL PROGRAMA DE REGISTRO DE ALUMNOS Y NOTAS:\n\n");
+	mostrarmaterias();
+    menu(&opcion);
+
+	printf("%d\n",opcion);
+}
