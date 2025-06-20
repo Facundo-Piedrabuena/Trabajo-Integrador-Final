@@ -1,15 +1,17 @@
 #include <stdio.h>
-#include <conio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
-#define GDE "d:\\arch.dat"
+/* Ruta del archivo de texto log */
+#define GDE "arch.dat"
 
+/* ====== Estructura de materias ====== */
 typedef struct Materia {
 	char nombreM[50];
 	struct Materia *sig;
 } Materia;
 
+/* ====== Estructura de alumnos ====== */
 typedef struct Alumno {
 	char nombre[50];
 	int dni;
@@ -17,6 +19,7 @@ typedef struct Alumno {
 	struct Alumno *sig;
 } Alumno;
 
+/* ====== Estructura de notas ====== */
 typedef struct Nota {
 	char alumno[50];
 	char materia[50];
@@ -24,72 +27,187 @@ typedef struct Nota {
 	struct Nota *sig;
 } Nota;
 
-Materia* agregarMateria(Materia *lista, FILE *arch);
-Materia* quitarMateria(Materia *lista, FILE *arch);
+/* ====== Estructura auxiliar para ordenamientos ====== */
+typedef struct {
+	char nombre[50];
+	int dni;
+	char materia[50];
+	float promedio;
+} AlumnoConPromedio;
 
-Alumno* agregarAlumno(Alumno *lista, FILE *arch, Materia *listaMaterias);
-Alumno* quitarAlumno(Alumno *lista, FILE *arch);
+/* ====== Prototipos de funciones ====== */
+Materia* agregarMateria(Materia*, FILE*);
+Materia* quitarMateria(Materia*, FILE*);
+Alumno* agregarAlumno(Alumno*, FILE*, Materia*);
+Alumno* quitarAlumno(Alumno*, FILE*);
+Nota* agregarNota(Nota*, FILE*, Materia*, Alumno*);
+Nota* quitarNota(Nota*, FILE*, Materia*, Alumno*);
 
-Nota* agregarNota(Nota *lista, FILE *arch, Materia *listaMaterias, Alumno *listaAlumnos);
-Nota* quitarNota(Nota *lista, FILE *arch, Materia *listaMaterias, Alumno *listaAlumnos);
+void materias(Materia**, FILE*);
+void alumno(Alumno**, FILE*, Materia*);
+void notas(Nota**, FILE*, Materia*, Alumno*);
+void mostrar(Materia*, Alumno*, Nota*);
+void buscar(Alumno*, Nota*);
+void mostrarPromediosOrdenados(Alumno*, Nota*);
+void leerArchivo(FILE *arch, Materia **materias, Alumno **alumnos, Nota **notas);
 
-void materias(Materia **listaMaterias, FILE *arch) {
-	int opcion = 0;
-	while (opcion != 3) {
-		printf("\n1. Agregar materia\n");
-		printf("2. Quitar materia\n");
-		printf("3. Volver al menu\n");
-		printf("Seleccione una opcion: ");
-		scanf("%d", &opcion);
-		if (opcion == 1)
-			*listaMaterias = agregarMateria(*listaMaterias, arch);
-		else if (opcion == 2)
-			*listaMaterias = quitarMateria(*listaMaterias, arch);
-		else if (opcion == 3)
-			printf("Volviendo al menu...\n");
-		else
-			printf("Opcion invalida.\n");
+
+float calcularPromedio(Nota*, char[], char[]);
+int copiarAlumnosAArray(Alumno*, AlumnoConPromedio[]);
+void burbujaPromedios(AlumnoConPromedio[], int);
+void burbujaNombre(AlumnoConPromedio[], int);
+void burbujaDNI(AlumnoConPromedio[], int);
+int busquedaBinariaNombre(AlumnoConPromedio[], int, char[]);
+int busquedaBinariaDNI(AlumnoConPromedio[], int, int);
+
+/* ====== Menú principal ====== */
+void menu(int *opcion) {
+	printf("\n===== MENU =====\n");
+	printf("1. Agregar o quitar materias\n");
+	printf("2. Agregar o quitar alumnos\n");
+	printf("3. Agregar o quitar notas\n");
+	printf("4. Buscar por nombre o DNI\n");
+	printf("5. Mostrar registros\n");
+	printf("6. Mostrar promedios ordenados\n");
+	printf("7. Salir\n");
+	printf("===============\n");
+	scanf("%d", opcion);
+	if (*opcion < 1 || *opcion > 7) {
+		printf("Error. Ingrese un número válido entre 1 y 7\n");
+		menu(opcion);
 	}
 }
 
-void alumno(Alumno **listaAlumnos, FILE *arch, Materia *listaMaterias) {
+/* ====== Función principal ====== */
+int main() {
 	int opcion = 0;
-	while (opcion != 3) {
-		printf("\n1. Agregar alumno\n");
-		printf("2. Quitar alumno\n");
-		printf("3. Volver al menu\n");
-		printf("Seleccione una opcion: ");
-		scanf("%d", &opcion);
-		if (opcion == 1)
-			*listaAlumnos = agregarAlumno(*listaAlumnos, arch, listaMaterias);
-		else if (opcion == 2)
-			*listaAlumnos = quitarAlumno(*listaAlumnos, arch);
-		else if (opcion == 3)
-			printf("Volviendo al menu...\n");
-		else
-			printf("Opcion invalida.\n");
+	Materia *listaMaterias = NULL;
+	Alumno *listaAlumnos = NULL;
+	Nota *listaNotas = NULL;
+	
+	FILE *arch;
+	if ((arch = fopen(GDE, "a+")) == NULL) {
+		printf("No se pudo abrir el archivo\n");
+		return 1;
 	}
+	
+	/* === Leer datos previos del archivo === */
+	leerArchivo(arch, &listaMaterias, &listaAlumnos, &listaNotas);
+	
+	printf("BIENVENIDO AL SISTEMA DE GESTION DE ESTUDIANTES Y NOTAS\n");
+	
+	while (opcion != 7) {
+		menu(&opcion);
+		switch (opcion) {
+		case 1:
+			materias(&listaMaterias, arch);
+			break;
+		case 2:
+			alumno(&listaAlumnos, arch, listaMaterias);
+			break;
+		case 3:
+			notas(&listaNotas, arch, listaMaterias, listaAlumnos);
+			break;
+		case 4:
+			buscar(listaAlumnos, listaNotas);
+			break;
+		case 5:
+			mostrar(listaMaterias, listaAlumnos, listaNotas);
+			break;
+		case 6:
+			mostrarPromediosOrdenados(listaAlumnos, listaNotas);
+			break;
+		case 7:
+			break;
+		}
+	}
+	
+	fclose(arch);
+	
+	/* Liberar memoria dinámica */
+	while (listaMaterias) {
+		Materia *tmp = listaMaterias;
+		listaMaterias = listaMaterias->sig;
+		free(tmp);
+	}
+	while (listaAlumnos) {
+		Alumno *tmp = listaAlumnos;
+		listaAlumnos = listaAlumnos->sig;
+		free(tmp);
+	}
+	while (listaNotas) {
+		Nota *tmp = listaNotas;
+		listaNotas = listaNotas->sig;
+		free(tmp);
+	}
+	
+	return 0;
 }
 
-void notas(Nota **listaNotas, FILE *arch, Materia *listaMaterias, Alumno *listaAlumnos) {
-	int opcion = 0;
-	while (opcion != 3) {
-		printf("\n1. Agregar nota\n");
-		printf("2. Quitar nota\n");
-		printf("3. Volver al menu\n");
-		printf("Seleccione una opcion: ");
+/* ====== Submenú de materias ====== */
+void materias(Materia **lista, FILE *arch) {
+	int opcion;
+	do {
+		printf("\n1. Agregar materia\n2. Quitar materia\n3. Volver\nOpción: ");
 		scanf("%d", &opcion);
-		if (opcion == 1)
-			*listaNotas = agregarNota(*listaNotas, arch, listaMaterias, listaAlumnos);
-		else if (opcion == 2)
-			*listaNotas = quitarNota(*listaNotas, arch, listaMaterias, listaAlumnos);
-		else if (opcion == 3)
-			printf("Volviendo al menu...\n");
-		else
-			printf("Opcion invalida.\n");
-	}
+		switch (opcion) {
+		case 1:
+			*lista = agregarMateria(*lista, arch);
+			break;
+		case 2:
+			*lista = quitarMateria(*lista, arch);
+			break;
+		case 3:
+			break;
+		default:
+			printf("Opción inválida\n");
+		}
+	} while (opcion != 3);
 }
 
+/* ====== Submenú de alumnos ====== */
+void alumno(Alumno **lista, FILE *arch, Materia *materias) {
+	int opcion;
+	do {
+		printf("\n1. Agregar alumno\n2. Quitar alumno\n3. Volver\nOpción: ");
+		scanf("%d", &opcion);
+		switch (opcion) {
+		case 1:
+			*lista = agregarAlumno(*lista, arch, materias);
+			break;
+		case 2:
+			*lista = quitarAlumno(*lista, arch);
+			break;
+		case 3:
+			break;
+		default:
+			printf("Opción inválida\n");
+		}
+	} while (opcion != 3);
+}
+
+/* ====== Submenú de notas ====== */
+void notas(Nota **lista, FILE *arch, Materia *materias, Alumno *alumnos) {
+	int opcion;
+	do {
+		printf("\n1. Agregar nota\n2. Quitar nota\n3. Volver\nOpción: ");
+		scanf("%d", &opcion);
+		switch (opcion) {
+		case 1:
+			*lista = agregarNota(*lista, arch, materias, alumnos);
+			break;
+		case 2:
+			*lista = quitarNota(*lista, arch, materias, alumnos);
+			break;
+		case 3:
+			break;
+		default:
+			printf("Opción inválida\n");
+		}
+	} while (opcion != 3);
+}
+
+/* ====== Mostrar datos agrupados por materia, alumno y nota ====== */
 void mostrar(Materia *listaMaterias, Alumno *listaAlumnos, Nota *listaNotas) {
 	printf("\n========================= Mostrar =========================\n");
 	printf("%-20s %-20s %-10s %-10s\n\n", "Materia:", "Alumno:", "DNI:", "Nota:");
@@ -101,7 +219,6 @@ void mostrar(Materia *listaMaterias, Alumno *listaAlumnos, Nota *listaNotas) {
 			if (strcmp(a->materiaAlum, m->nombreM) == 0) {
 				encontrado = 1;
 				printf("%-20s %-20s %-10d ", m->nombreM, a->nombre, a->dni);
-				// Buscar nota para el alumno y materia
 				Nota *n = listaNotas;
 				int notaEncontrada = 0;
 				while (n != NULL) {
@@ -118,7 +235,6 @@ void mostrar(Materia *listaMaterias, Alumno *listaAlumnos, Nota *listaNotas) {
 			a = a->sig;
 		}
 		if (!encontrado) {
-			// Si no hay alumnos en esta materia igual va a mostrar la materia sin alumnos
 			printf("%-20s %-20s %-10s %-10s\n", m->nombreM, "-", "-", "-");
 		}
 		m = m->sig;
@@ -126,83 +242,7 @@ void mostrar(Materia *listaMaterias, Alumno *listaAlumnos, Nota *listaNotas) {
 	printf("============================================================\n");
 }
 
-void buscar() {
-	
-}
-
-void menu(int *opcion) {
-	printf("\n===== MENU =====\n");
-	printf("1. Agregar o quitar materias\n");
-	printf("2. Agregar o quitar alumnos\n");
-	printf("3. Agregar o quitar notas\n");
-	printf("4. Buscar por nombre o dni\n");
-	printf("5. Mostrar por pantalla\n");
-	printf("6. Salir\n");
-	printf("===============\n");
-	scanf(" %d", opcion);
-	if (*opcion < 1 || *opcion > 6) {
-		printf("Error. Ingrese un numero valido entre 1 y 6\n");
-		return menu(opcion);
-	}
-}
-
-int main() {
-	int opcion = 0;
-	
-	Materia *listaMaterias = NULL;
-	Alumno *listaAlumnos = NULL;
-	Nota *listaNotas = NULL;
-	
-	FILE *arch;
-	if ((arch = fopen(GDE, "a+")) == NULL) {
-		printf("No se pudo abrir el archivo\n");
-		return 1;
-	}
-	
-	printf("BIENVENIDO AL PROGRAMA DE REGISTRO DE ALUMNOS Y NOTAS:\n\n");
-	
-	while (opcion != 6) {
-		menu(&opcion);
-		switch (opcion) {
-		case 1:
-			materias(&listaMaterias, arch);
-			break;
-		case 2:
-			alumno(&listaAlumnos, arch, listaMaterias);
-			break;
-		case 3:
-			notas(&listaNotas, arch, listaMaterias, listaAlumnos);
-			break;
-		case 4:
-			buscar();
-			break;
-		case 5:
-			mostrar(listaMaterias, listaAlumnos, listaNotas);
-			break;
-		case 6:
-			break;
-		}
-	}
-	
-	fclose(arch);
-	
-	while (listaMaterias) {
-		Materia *tmp = listaMaterias;
-		listaMaterias = listaMaterias->sig;
-		free(tmp);
-	}
-	while (listaAlumnos) {
-		Alumno *tmp = listaAlumnos;
-		listaAlumnos = listaAlumnos->sig;
-		free(tmp);
-	}
-	while (listaNotas) {
-		Nota *tmp = listaNotas;
-		listaNotas = listaNotas->sig;
-		free(tmp);
-	}
-}
-
+/* ====== Agregar una materia ====== */
 Materia* agregarMateria(Materia *lista, FILE *arch) {
 	Materia *nuevo = (Materia*) malloc(sizeof(Materia));
 	printf("Ingrese nombre de la materia: ");
@@ -213,33 +253,31 @@ Materia* agregarMateria(Materia *lista, FILE *arch) {
 	return nuevo;
 }
 
+/* ====== Quitar una materia ====== */
 Materia* quitarMateria(Materia *lista, FILE *arch) {
 	char nombreM[50];
 	printf("Ingrese nombre de la materia a quitar: ");
 	scanf("%s", nombreM);
-	
 	Materia *actual = lista, *anterior = NULL;
 	while (actual != NULL && strcmp(actual->nombreM, nombreM) != 0) {
 		anterior = actual;
 		actual = actual->sig;
 	}
-	
 	if (actual == NULL) {
 		printf("Materia no encontrada.\n");
 		return lista;
 	}
-	
 	if (anterior == NULL)
 		lista = actual->sig;
 	else
 		anterior->sig = actual->sig;
-	
 	fprintf(arch, "Materia quitada: %s\n", actual->nombreM);
 	printf("Materia %s eliminada.\n", actual->nombreM);
 	free(actual);
 	return lista;
 }
 
+/* ====== Agregar un alumno con validación de materia ====== */
 Alumno* agregarAlumno(Alumno *lista, FILE *arch, Materia *listaMaterias) {
 	Alumno *nuevo = (Alumno*) malloc(sizeof(Alumno));
 	printf("Ingrese nombre del alumno: ");
@@ -248,8 +286,9 @@ Alumno* agregarAlumno(Alumno *lista, FILE *arch, Materia *listaMaterias) {
 	scanf("%d", &nuevo->dni);
 	printf("Ingrese nombre de la materia a la que pertenece: ");
 	scanf("%s", nuevo->materiaAlum);
+	
 	Materia *m = listaMaterias;
-	int materiaEncontrada = 0;                                      // Verificar si la materia existe
+	int materiaEncontrada = 0;
 	while (m != NULL) {
 		if (strcmp(m->nombreM, nuevo->materiaAlum) == 0) {
 			materiaEncontrada = 1;
@@ -258,25 +297,53 @@ Alumno* agregarAlumno(Alumno *lista, FILE *arch, Materia *listaMaterias) {
 		m = m->sig;
 	}
 	if (!materiaEncontrada) {
-		printf("Error: La materia '%s' no existe. No se agregarÃ¡ el alumno.\n", nuevo->materiaAlum);
+		printf("Error: La materia '%s' no existe. No se agregará el alumno.\n", nuevo->materiaAlum);
 		free(nuevo);
 		return lista;
 	}
+	
 	nuevo->sig = lista;
 	fprintf(arch, "Alumno: %s DNI: %d Materia: %s\n", nuevo->nombre, nuevo->dni, nuevo->materiaAlum);
 	printf("Alumno agregado: %s (%d) en materia %s\n", nuevo->nombre, nuevo->dni, nuevo->materiaAlum);
 	return nuevo;
 }
 
+void leerArchivo(FILE *arch, Materia **materias, Alumno **alumnos, Nota **notas) {
+	rewind(arch);  // Nos aseguramos de leer desde el inicio
+	char linea[200];
+	
+	while (fgets(linea, sizeof(linea), arch)) {
+		if (strncmp(linea, "Materia:", 8) == 0) {
+			Materia *nueva = (Materia *)malloc(sizeof(Materia));
+			sscanf(linea, "Materia: %s", nueva->nombreM);
+			nueva->sig = *materias;
+			*materias = nueva;
+		} else if (strncmp(linea, "Alumno:", 7) == 0) {
+			Alumno *nuevo = (Alumno *)malloc(sizeof(Alumno));
+			sscanf(linea, "Alumno: %s DNI: %d Materia: %s", nuevo->nombre, &nuevo->dni, nuevo->materiaAlum);
+			nuevo->sig = *alumnos;
+			*alumnos = nuevo;
+		} else if (strncmp(linea, "Nota:", 5) == 0) {
+			Nota *nueva = (Nota *)malloc(sizeof(Nota));
+			sscanf(linea, "Nota: Alumno=%s Materia=%s Valor=%f", nueva->alumno, nueva->materia, &nueva->valor);
+			nueva->sig = *notas;
+			*notas = nueva;
+		}
+		// Puedes agregar más tipos de registros si agregás funcionalidades extra en el futuro
+	}
+}
+
+
+/* ====== Quitar un alumno con validación de materia ====== */
 Alumno* quitarAlumno(Alumno *lista, FILE *arch) {
-	char nombre[50], materiaingresada[50];
+	char nombre[50], materia[50];
 	printf("Ingrese nombre del alumno a quitar: ");
 	scanf("%s", nombre);
 	printf("Ingrese nombre de la materia: ");
-	scanf("%s", materiaingresada);
+	scanf("%s", materia);
 	
 	Alumno *actual = lista, *anterior = NULL;
-	while (actual != NULL && (strcmp(actual->nombre, nombre) != 0 || strcmp(actual->materiaAlum, materiaingresada) != 0)) {
+	while (actual != NULL && (strcmp(actual->nombre, nombre) != 0 || strcmp(actual->materiaAlum, materia) != 0)) {
 		anterior = actual;
 		actual = actual->sig;
 	}
@@ -295,107 +362,280 @@ Alumno* quitarAlumno(Alumno *lista, FILE *arch) {
 	return lista;
 }
 
-Nota* agregarNota(Nota *lista, FILE *arch, Materia *listaMaterias, Alumno *listaAlumnos) {
-	char alumno[50], materia[50];
-	float valor;
-	printf("Ingrese nombre del alumno: ");
-	scanf("%s", alumno);
-	printf("Ingrese nombre de la materia: ");
-	scanf("%s", materia);
-	// Verificar que exista el alumno EN ESA MATERIA
-	Alumno *a = listaAlumnos;
-	int alumnoEncontrado = 0;
-	while (a != NULL) {
-		if (strcmp(a->nombre, alumno) == 0 && strcmp(a->materiaAlum, materia) == 0) {
-			alumnoEncontrado = 1;
-			break;
+	
+	/* ====== Agregar una nota con validaciones ====== */
+	Nota* agregarNota(Nota *lista, FILE *arch, Materia *materias, Alumno *alumnos) {
+		char alumno[50], materia[50];
+		float valor;
+		
+		printf("Ingrese nombre del alumno: ");
+		scanf("%s", alumno);
+		printf("Ingrese nombre de la materia: ");
+		scanf("%s", materia);
+		
+		/* Validar existencia del alumno en la materia */
+		Alumno *a = alumnos;
+		int alumnoOK = 0;
+		while (a != NULL) {
+			if (strcmp(a->nombre, alumno) == 0 && strcmp(a->materiaAlum, materia) == 0) {
+				alumnoOK = 1;
+				break;
+			}
+			a = a->sig;
 		}
-		a = a->sig;
-	}
-	if (!alumnoEncontrado) {
-		printf("Alumno no encontrado en esa materia. La nota no se puede registrar.\n");
-		return lista;
-	}
-	// Verificar materia
-	Materia *m = listaMaterias;
-	int materiaEncontrada = 0;
-	while (m != NULL) {
-		if (strcmp(m->nombreM, materia) == 0) {
-			materiaEncontrada = 1;
-			break;
+		if (!alumnoOK) {
+			printf("Alumno no encontrado en esa materia. No se puede registrar la nota.\n");
+			return lista;
 		}
-		m = m->sig;
-	}
-	if (!materiaEncontrada) {
-		printf("Materia no encontrada. La nota no se puede registrar.\n");
-		return lista;
-	}
-	
-	printf("Ingrese valor de la nota: ");
-	scanf("%f", &valor);
-	
-	Nota *nuevo = (Nota*) malloc(sizeof(Nota));
-	strcpy(nuevo->alumno, alumno);
-	strcpy(nuevo->materia, materia);
-	nuevo->valor = valor;
-	nuevo->sig = lista;
-	
-	fprintf(arch, "Nota: Alumno=%s Materia=%s Valor=%.2f\n", nuevo->alumno, nuevo->materia, nuevo->valor);
-	printf("Nota agregada: %s - %s - %.2f\n", nuevo->alumno, nuevo->materia, nuevo->valor);
-	return nuevo;
-}
-
-Nota* quitarNota(Nota *lista, FILE *arch, Materia *listaMaterias, Alumno *listaAlumnos) {
-	char alumno[50], materia[50];
-	printf("Ingrese nombre del alumno: ");
-	scanf("%s", alumno);
-	printf("Ingrese nombre de la materia: ");
-	scanf("%s", materia);
-	
-	// Verificar que exista el alumno EN ESA MATERIA
-	Alumno *a = listaAlumnos;
-	int alumnoEncontrado = 0;
-	while (a != NULL) {
-		if (strcmp(a->nombre, alumno) == 0 && strcmp(a->materiaAlum, materia) == 0) {
-			alumnoEncontrado = 1;
-			break;
+		
+		/* Validar existencia de la materia */
+		Materia *m = materias;
+		int materiaOK = 0;
+		while (m != NULL) {
+			if (strcmp(m->nombreM, materia) == 0) {
+				materiaOK = 1;
+				break;
+			}
+			m = m->sig;
 		}
-		a = a->sig;
-	}
-	if (!alumnoEncontrado) {
-		printf("Alumno no encontrado en esa materia. No se puede quitar la nota.\n");
-		return lista;
-	}
-	// Verificar materia
-	Materia *m = listaMaterias;
-	int materiaEncontrada = 0;
-	while (m != NULL) {
-		if (strcmp(m->nombreM, materia) == 0) {
-			materiaEncontrada = 1;
-			break;
+		if (!materiaOK) {
+			printf("Materia no encontrada. No se puede registrar la nota.\n");
+			return lista;
 		}
-		m = m->sig;
+		
+		printf("Ingrese valor de la nota: ");
+		scanf("%f", &valor);
+		
+		Nota *nuevo = (Nota*) malloc(sizeof(Nota));
+		strcpy(nuevo->alumno, alumno);
+		strcpy(nuevo->materia, materia);
+		nuevo->valor = valor;
+		nuevo->sig = lista;
+		
+		fprintf(arch, "Nota: Alumno=%s Materia=%s Valor=%.2f\n", alumno, materia, valor);
+		printf("Nota agregada: %s - %s - %.2f\n", alumno, materia, valor);
+		
+		return nuevo;
 	}
-	if (!materiaEncontrada) {
-		printf("Materia no encontrada. No se puede quitar la nota.\n");
-		return lista;
-	}
-	Nota *actual = lista, *anterior = NULL;
-	while (actual != NULL && (strcmp(actual->alumno, alumno) != 0 || strcmp(actual->materia, materia) != 0)) {
-		anterior = actual;
-		actual = actual->sig;
-	}
-	if (actual == NULL) {
-		printf("Nota no encontrada.\n");
-		return lista;
-	}
-	if (anterior == NULL)
-		lista = actual->sig;
-	else
-		anterior->sig = actual->sig;
 	
-	fprintf(arch, "Nota quitada: Alumno=%s Materia=%s\n", alumno, materia);
-	printf("Nota eliminada: %s - %s\n", alumno, materia);
-	free(actual);
-	return lista;
-}
+	/* ====== Quitar una nota ====== */
+	Nota* quitarNota(Nota *lista, FILE *arch, Materia *materias, Alumno *alumnos) {
+		char alumno[50], materia[50];
+		
+		printf("Ingrese nombre del alumno: ");
+		scanf("%s", alumno);
+		printf("Ingrese nombre de la materia: ");
+		scanf("%s", materia);
+		
+		/* Validar existencia del alumno en la materia */
+		Alumno *a = alumnos;
+		int alumnoOK = 0;
+		while (a != NULL) {
+			if (strcmp(a->nombre, alumno) == 0 && strcmp(a->materiaAlum, materia) == 0) {
+				alumnoOK = 1;
+				break;
+			}
+			a = a->sig;
+		}
+		if (!alumnoOK) {
+			printf("Alumno no encontrado en esa materia. No se puede quitar la nota.\n");
+			return lista;
+		}
+		
+		/* Validar existencia de la materia */
+		Materia *m = materias;
+		int materiaOK = 0;
+		while (m != NULL) {
+			if (strcmp(m->nombreM, materia) == 0) {
+				materiaOK = 1;
+				break;
+			}
+			m = m->sig;
+		}
+		if (!materiaOK) {
+			printf("Materia no encontrada. No se puede quitar la nota.\n");
+			return lista;
+		}
+		
+		Nota *actual = lista, *anterior = NULL;
+		while (actual != NULL && (strcmp(actual->alumno, alumno) != 0 || strcmp(actual->materia, materia) != 0)) {
+			anterior = actual;
+			actual = actual->sig;
+		}
+		if (actual == NULL) {
+			printf("Nota no encontrada.\n");
+			return lista;
+		}
+		if (anterior == NULL)
+			lista = actual->sig;
+		else
+			anterior->sig = actual->sig;
+		
+		fprintf(arch, "Nota quitada: Alumno=%s Materia=%s\n", alumno, materia);
+		printf("Nota eliminada: %s - %s\n", alumno, materia);
+		free(actual);
+		return lista;
+	}
+	
+	/* ====== Calcular promedio de un alumno en una materia ====== */
+	float calcularPromedio(Nota *notas, char nombre[], char materia[]) {
+		float suma = 0;
+		int cantidad = 0;
+		
+		while (notas != NULL) {
+			if (strcmp(notas->alumno, nombre) == 0 && strcmp(notas->materia, materia) == 0) {
+				suma += notas->valor;
+				cantidad++;
+			}
+			notas = notas->sig;
+		}
+		
+		return (cantidad == 0) ? 0 : suma / cantidad;
+	}
+	
+	/* ====== Copiar alumnos de la lista a un arreglo auxiliar ====== */
+	int copiarAlumnosAArray(Alumno *lista, AlumnoConPromedio arr[]) {
+		int i = 0;
+		while (lista != NULL) {
+			strcpy(arr[i].nombre, lista->nombre);
+			strcpy(arr[i].materia, lista->materiaAlum);
+			arr[i].dni = lista->dni;
+			arr[i].promedio = 0;
+			lista = lista->sig;
+			i++;
+		}
+		return i;
+	}
+	
+	/* ====== Ordenamiento burbuja por nombre (ascendente) ====== */
+	void burbujaNombre(AlumnoConPromedio arr[], int n) {
+		AlumnoConPromedio tmp;
+		for (int i = 0; i < n - 1; i++)
+			for (int j = 0; j < n - i - 1; j++)
+				if (strcmp(arr[j].nombre, arr[j + 1].nombre) > 0) {
+					tmp = arr[j];
+					arr[j] = arr[j + 1];
+					arr[j + 1] = tmp;
+		}
+	}
+	
+	/* ====== Ordenamiento burbuja por DNI (ascendente) ====== */
+	void burbujaDNI(AlumnoConPromedio arr[], int n) {
+		AlumnoConPromedio tmp;
+		for (int i = 0; i < n - 1; i++)
+			for (int j = 0; j < n - i - 1; j++)
+				if (arr[j].dni > arr[j + 1].dni) {
+					tmp = arr[j];
+					arr[j] = arr[j + 1];
+					arr[j + 1] = tmp;
+		}
+	}
+	
+	/* ====== Ordenamiento burbuja por promedio (descendente) ====== */
+	void burbujaPromedios(AlumnoConPromedio arr[], int n) {
+		AlumnoConPromedio tmp;
+		for (int i = 0; i < n - 1; i++)
+			for (int j = 0; j < n - i - 1; j++)
+				if (arr[j].promedio < arr[j + 1].promedio) {
+					tmp = arr[j];
+					arr[j] = arr[j + 1];
+					arr[j + 1] = tmp;
+		}
+	}
+	
+	/* ====== Búsqueda binaria por nombre (requiere burbujaNombre antes) ====== */
+	int busquedaBinariaNombre(AlumnoConPromedio arr[], int n, char nombre[]) {
+		int ini = 0, fin = n - 1, medio;
+		while (ini <= fin) {
+			medio = (ini + fin) / 2;
+			int cmp = strcmp(nombre, arr[medio].nombre);
+			if (cmp == 0) return medio;
+			if (cmp < 0) fin = medio - 1;
+			else ini = medio + 1;
+		}
+		return -1;
+	}
+	
+	/* ====== Búsqueda binaria por DNI (requiere burbujaDNI antes) ====== */
+	int busquedaBinariaDNI(AlumnoConPromedio arr[], int n, int dni) {
+		int ini = 0, fin = n - 1, medio;
+		while (ini <= fin) {
+			medio = (ini + fin) / 2;
+			if (dni == arr[medio].dni) return medio;
+			if (dni < arr[medio].dni) fin = medio - 1;
+			else ini = medio + 1;
+		}
+		return -1;
+	}
+	
+	/* ====== Buscar alumno por nombre o DNI usando búsqueda binaria ====== */
+	void buscar(Alumno *lista, Nota *notas) {
+		if (lista == NULL) {
+			printf("No hay alumnos cargados.\n");
+			return;
+		}
+		
+		AlumnoConPromedio arr[100];
+		int total = copiarAlumnosAArray(lista, arr);
+		
+		int opcion;
+		printf("\nBuscar por:\n1. Nombre\n2. DNI\nOpción: ");
+		scanf("%d", &opcion);
+		
+		if (opcion == 1) {
+			char nombre[50];
+			printf("Ingrese el nombre del alumno: ");
+			scanf("%s", nombre);
+			burbujaNombre(arr, total);
+			int pos = busquedaBinariaNombre(arr, total, nombre);
+			if (pos != -1) {
+				arr[pos].promedio = calcularPromedio(notas, arr[pos].nombre, arr[pos].materia);
+				printf("\nResultado:\nNombre: %s\nDNI: %d\nMateria: %s\nPromedio: %.2f\n",
+					   arr[pos].nombre, arr[pos].dni, arr[pos].materia, arr[pos].promedio);
+			} else {
+				printf("Alumno no encontrado.\n");
+			}
+		} else if (opcion == 2) {
+			int dni;
+			printf("Ingrese el DNI del alumno: ");
+			scanf("%d", &dni);
+			burbujaDNI(arr, total);
+			int pos = busquedaBinariaDNI(arr, total, dni);
+			if (pos != -1) {
+				arr[pos].promedio = calcularPromedio(notas, arr[pos].nombre, arr[pos].materia);
+				printf("\nResultado:\nNombre: %s\nDNI: %d\nMateria: %s\nPromedio: %.2f\n",
+					   arr[pos].nombre, arr[pos].dni, arr[pos].materia, arr[pos].promedio);
+			} else {
+				printf("Alumno no encontrado.\n");
+			}
+		} else {
+			printf("Opción inválida.\n");
+		}
+	}
+	
+	/* ====== Mostrar todos los alumnos ordenados por promedio (descendente) ====== */
+	void mostrarPromediosOrdenados(Alumno *alumnos, Nota *notas) {
+		if (alumnos == NULL) {
+			printf("No hay alumnos cargados.\n");
+			return;
+		}
+		
+		AlumnoConPromedio arr[100];
+		int total = copiarAlumnosAArray(alumnos, arr);
+		
+		for (int i = 0; i < total; i++) {
+			arr[i].promedio = calcularPromedio(notas, arr[i].nombre, arr[i].materia);
+		}
+		
+		burbujaPromedios(arr, total);
+		
+		printf("\n====== Promedios ordenados (de mayor a menor) ======\n");
+		printf("%-20s | %-10s | %-15s | %-10s\n", "Nombre", "DNI", "Materia", "Promedio");
+		printf("---------------------------------------------------------------\n");
+		for (int i = 0; i < total; i++) {
+			printf("%-20s | %-10d | %-15s | %-10.2f\n",
+				   arr[i].nombre, arr[i].dni, arr[i].materia, arr[i].promedio);
+		}
+		printf("====================================================\n");
+	}
+	
