@@ -363,279 +363,278 @@ Alumno* quitarAlumno(Alumno *lista, FILE *arch) {
 }
 
 	
-	/* ====== Agregar una nota con validaciones ====== */
-	Nota* agregarNota(Nota *lista, FILE *arch, Materia *materias, Alumno *alumnos) {
-		char alumno[50], materia[50];
-		float valor;
-		
-		printf("Ingrese nombre del alumno: ");
-		scanf("%s", alumno);
-		printf("Ingrese nombre de la materia: ");
-		scanf("%s", materia);
-		
-		/* Validar existencia del alumno en la materia */
-		Alumno *a = alumnos;
-		int alumnoOK = 0;
-		while (a != NULL) {
-			if (strcmp(a->nombre, alumno) == 0 && strcmp(a->materiaAlum, materia) == 0) {
-				alumnoOK = 1;
-				break;
-			}
-			a = a->sig;
-		}
-		if (!alumnoOK) {
-			printf("Alumno no encontrado en esa materia. No se puede registrar la nota.\n");
-			return lista;
-		}
-		
-		/* Validar existencia de la materia */
-		Materia *m = materias;
-		int materiaOK = 0;
-		while (m != NULL) {
-			if (strcmp(m->nombreM, materia) == 0) {
-				materiaOK = 1;
-				break;
-			}
-			m = m->sig;
-		}
-		if (!materiaOK) {
-			printf("Materia no encontrada. No se puede registrar la nota.\n");
-			return lista;
-		}
-		
-		printf("Ingrese valor de la nota: ");
-		scanf("%f", &valor);
-		
-		Nota *nuevo = (Nota*) malloc(sizeof(Nota));
-		strcpy(nuevo->alumno, alumno);
-		strcpy(nuevo->materia, materia);
-		nuevo->valor = valor;
-		nuevo->sig = lista;
-		
-		fprintf(arch, "Nota: Alumno=%s Materia=%s Valor=%.2f\n", alumno, materia, valor);
-		printf("Nota agregada: %s - %s - %.2f\n", alumno, materia, valor);
-		
-		return nuevo;
-	}
-	
-	/* ====== Quitar una nota ====== */
-	Nota* quitarNota(Nota *lista, FILE *arch, Materia *materias, Alumno *alumnos) {
-		char alumno[50], materia[50];
-		
-		printf("Ingrese nombre del alumno: ");
-		scanf("%s", alumno);
-		printf("Ingrese nombre de la materia: ");
-		scanf("%s", materia);
-		
-		/* Validar existencia del alumno en la materia */
-		Alumno *a = alumnos;
-		int alumnoOK = 0;
-		while (a != NULL) {
-			if (strcmp(a->nombre, alumno) == 0 && strcmp(a->materiaAlum, materia) == 0) {
-				alumnoOK = 1;
-				break;
-			}
-			a = a->sig;
-		}
-		if (!alumnoOK) {
-			printf("Alumno no encontrado en esa materia. No se puede quitar la nota.\n");
-			return lista;
-		}
-		
-		/* Validar existencia de la materia */
-		Materia *m = materias;
-		int materiaOK = 0;
-		while (m != NULL) {
-			if (strcmp(m->nombreM, materia) == 0) {
-				materiaOK = 1;
-				break;
-			}
-			m = m->sig;
-		}
-		if (!materiaOK) {
-			printf("Materia no encontrada. No se puede quitar la nota.\n");
-			return lista;
-		}
-		
-		Nota *actual = lista, *anterior = NULL;
-		while (actual != NULL && (strcmp(actual->alumno, alumno) != 0 || strcmp(actual->materia, materia) != 0)) {
-			anterior = actual;
-			actual = actual->sig;
-		}
-		if (actual == NULL) {
-			printf("Nota no encontrada.\n");
-			return lista;
-		}
-		if (anterior == NULL)
-			lista = actual->sig;
-		else
-			anterior->sig = actual->sig;
-		
-		fprintf(arch, "Nota quitada: Alumno=%s Materia=%s\n", alumno, materia);
-		printf("Nota eliminada: %s - %s\n", alumno, materia);
-		free(actual);
-		return lista;
-	}
-	
-	/* ====== Calcular promedio de un alumno en una materia ====== */
-	float calcularPromedio(Nota *notas, char nombre[], char materia[]) {
-		float suma = 0;
-		int cantidad = 0;
-		
-		while (notas != NULL) {
-			if (strcmp(notas->alumno, nombre) == 0 && strcmp(notas->materia, materia) == 0) {
-				suma += notas->valor;
-				cantidad++;
-			}
-			notas = notas->sig;
-		}
-		
-		return (cantidad == 0) ? 0 : suma / cantidad;
-	}
-	
-	/* ====== Copiar alumnos de la lista a un arreglo auxiliar ====== */
-	int copiarAlumnosAArray(Alumno *lista, AlumnoConPromedio arr[]) {
-		int i = 0;
-		while (lista != NULL) {
-			strcpy(arr[i].nombre, lista->nombre);
-			strcpy(arr[i].materia, lista->materiaAlum);
-			arr[i].dni = lista->dni;
-			arr[i].promedio = 0;
-			lista = lista->sig;
-			i++;
-		}
-		return i;
-	}
-	
-	/* ====== Ordenamiento burbuja por nombre (ascendente) ====== */
-	void burbujaNombre(AlumnoConPromedio arr[], int n) {
-		AlumnoConPromedio tmp;
-		for (int i = 0; i < n - 1; i++)
-			for (int j = 0; j < n - i - 1; j++)
-				if (strcmp(arr[j].nombre, arr[j + 1].nombre) > 0) {
-					tmp = arr[j];
-					arr[j] = arr[j + 1];
-					arr[j + 1] = tmp;
-		}
-	}
-	
-	/* ====== Ordenamiento burbuja por DNI (ascendente) ====== */
-	void burbujaDNI(AlumnoConPromedio arr[], int n) {
-		AlumnoConPromedio tmp;
-		for (int i = 0; i < n - 1; i++)
-			for (int j = 0; j < n - i - 1; j++)
-				if (arr[j].dni > arr[j + 1].dni) {
-					tmp = arr[j];
-					arr[j] = arr[j + 1];
-					arr[j + 1] = tmp;
-		}
-	}
-	
-	/* ====== Ordenamiento burbuja por promedio (descendente) ====== */
-	void burbujaPromedios(AlumnoConPromedio arr[], int n) {
-		AlumnoConPromedio tmp;
-		for (int i = 0; i < n - 1; i++)
-			for (int j = 0; j < n - i - 1; j++)
-				if (arr[j].promedio < arr[j + 1].promedio) {
-					tmp = arr[j];
-					arr[j] = arr[j + 1];
-					arr[j + 1] = tmp;
-		}
-	}
-	
-	/* ====== Búsqueda binaria por nombre (requiere burbujaNombre antes) ====== */
-	int busquedaBinariaNombre(AlumnoConPromedio arr[], int n, char nombre[]) {
-		int ini = 0, fin = n - 1, medio;
-		while (ini <= fin) {
-			medio = (ini + fin) / 2;
-			int cmp = strcmp(nombre, arr[medio].nombre);
-			if (cmp == 0) return medio;
-			if (cmp < 0) fin = medio - 1;
-			else ini = medio + 1;
-		}
-		return -1;
-	}
-	
-	/* ====== Búsqueda binaria por DNI (requiere burbujaDNI antes) ====== */
-	int busquedaBinariaDNI(AlumnoConPromedio arr[], int n, int dni) {
-		int ini = 0, fin = n - 1, medio;
-		while (ini <= fin) {
-			medio = (ini + fin) / 2;
-			if (dni == arr[medio].dni) return medio;
-			if (dni < arr[medio].dni) fin = medio - 1;
-			else ini = medio + 1;
-		}
-		return -1;
-	}
-	
-	/* ====== Buscar alumno por nombre o DNI usando búsqueda binaria ====== */
-	void buscar(Alumno *lista, Nota *notas) {
-		if (lista == NULL) {
-			printf("No hay alumnos cargados.\n");
-			return;
-		}
-		
-		AlumnoConPromedio arr[100];
-		int total = copiarAlumnosAArray(lista, arr);
-		
-		int opcion;
-		printf("\nBuscar por:\n1. Nombre\n2. DNI\nOpción: ");
-		scanf("%d", &opcion);
-		
-		if (opcion == 1) {
-			char nombre[50];
-			printf("Ingrese el nombre del alumno: ");
-			scanf("%s", nombre);
-			burbujaNombre(arr, total);
-			int pos = busquedaBinariaNombre(arr, total, nombre);
-			if (pos != -1) {
-				arr[pos].promedio = calcularPromedio(notas, arr[pos].nombre, arr[pos].materia);
-				printf("\nResultado:\nNombre: %s\nDNI: %d\nMateria: %s\nPromedio: %.2f\n",
-					   arr[pos].nombre, arr[pos].dni, arr[pos].materia, arr[pos].promedio);
-			} else {
-				printf("Alumno no encontrado.\n");
-			}
-		} else if (opcion == 2) {
-			int dni;
-			printf("Ingrese el DNI del alumno: ");
-			scanf("%d", &dni);
-			burbujaDNI(arr, total);
-			int pos = busquedaBinariaDNI(arr, total, dni);
-			if (pos != -1) {
-				arr[pos].promedio = calcularPromedio(notas, arr[pos].nombre, arr[pos].materia);
-				printf("\nResultado:\nNombre: %s\nDNI: %d\nMateria: %s\nPromedio: %.2f\n",
-					   arr[pos].nombre, arr[pos].dni, arr[pos].materia, arr[pos].promedio);
-			} else {
-				printf("Alumno no encontrado.\n");
-			}
-		} else {
-			printf("Opción inválida.\n");
-		}
-	}
-	
-	/* ====== Mostrar todos los alumnos ordenados por promedio (descendente) ====== */
-	void mostrarPromediosOrdenados(Alumno *alumnos, Nota *notas) {
-		if (alumnos == NULL) {
-			printf("No hay alumnos cargados.\n");
-			return;
-		}
-		
-		AlumnoConPromedio arr[100];
-		int total = copiarAlumnosAArray(alumnos, arr);
-		
-		for (int i = 0; i < total; i++) {
-			arr[i].promedio = calcularPromedio(notas, arr[i].nombre, arr[i].materia);
-		}
-		
-		burbujaPromedios(arr, total);
-		
-		printf("\n====== Promedios ordenados (de mayor a menor) ======\n");
-		printf("%-20s | %-10s | %-15s | %-10s\n", "Nombre", "DNI", "Materia", "Promedio");
-		printf("---------------------------------------------------------------\n");
-		for (int i = 0; i < total; i++) {
-			printf("%-20s | %-10d | %-15s | %-10.2f\n",
-				   arr[i].nombre, arr[i].dni, arr[i].materia, arr[i].promedio);
-		}
-		printf("====================================================\n");
-	}
-	
+/* ====== Agregar una nota con validaciones ====== */
+Nota* agregarNota(Nota *lista, FILE *arch, Materia *materias, Alumno *alumnos) {
+    char alumno[50], materia[50];
+    float valor;
+    
+    printf("Ingrese nombre del alumno: ");
+    scanf("%s", alumno);
+    printf("Ingrese nombre de la materia: ");
+    scanf("%s", materia);
+    
+    /* Validar existencia del alumno en la materia */
+    Alumno *a = alumnos;
+    int alumnoOK = 0;
+    while (a != NULL) {
+        if (strcmp(a->nombre, alumno) == 0 && strcmp(a->materiaAlum, materia) == 0) {
+            alumnoOK = 1;
+            break;
+        }
+        a = a->sig;
+    }
+    if (!alumnoOK) {
+        printf("Alumno no encontrado en esa materia. No se puede registrar la nota.\n");
+        return lista;
+    }
+    
+    /* Validar existencia de la materia */
+    Materia *m = materias;
+    int materiaOK = 0;
+    while (m != NULL) {
+        if (strcmp(m->nombreM, materia) == 0) {
+            materiaOK = 1;
+            break;
+        }
+        m = m->sig;
+    }
+    if (!materiaOK) {
+        printf("Materia no encontrada. No se puede registrar la nota.\n");
+        return lista;
+    }
+    
+    printf("Ingrese valor de la nota: ");
+    scanf("%f", &valor);
+    
+    Nota *nuevo = (Nota*) malloc(sizeof(Nota));
+    strcpy(nuevo->alumno, alumno);
+    strcpy(nuevo->materia, materia);
+    nuevo->valor = valor;
+    nuevo->sig = lista;
+    
+    fprintf(arch, "Nota: Alumno=%s Materia=%s Valor=%.2f\n", alumno, materia, valor);
+    printf("Nota agregada: %s - %s - %.2f\n", alumno, materia, valor);
+    
+    return nuevo;
+}
+
+/* ====== Quitar una nota ====== */
+Nota* quitarNota(Nota *lista, FILE *arch, Materia *materias, Alumno *alumnos) {
+    char alumno[50], materia[50];
+    
+    printf("Ingrese nombre del alumno: ");
+    scanf("%s", alumno);
+    printf("Ingrese nombre de la materia: ");
+    scanf("%s", materia);
+    
+    /* Validar existencia del alumno en la materia */
+    Alumno *a = alumnos;
+    int alumnoOK = 0;
+    while (a != NULL) {
+        if (strcmp(a->nombre, alumno) == 0 && strcmp(a->materiaAlum, materia) == 0) {
+            alumnoOK = 1;
+            break;
+        }
+        a = a->sig;
+    }
+    if (!alumnoOK) {
+        printf("Alumno no encontrado en esa materia. No se puede quitar la nota.\n");
+        return lista;
+    }
+    
+    /* Validar existencia de la materia */
+    Materia *m = materias;
+    int materiaOK = 0;
+    while (m != NULL) {
+        if (strcmp(m->nombreM, materia) == 0) {
+            materiaOK = 1;
+            break;
+        }
+        m = m->sig;
+    }
+    if (!materiaOK) {
+        printf("Materia no encontrada. No se puede quitar la nota.\n");
+        return lista;
+    }
+    
+    Nota *actual = lista, *anterior = NULL;
+    while (actual != NULL && (strcmp(actual->alumno, alumno) != 0 || strcmp(actual->materia, materia) != 0)) {
+        anterior = actual;
+        actual = actual->sig;
+    }
+    if (actual == NULL) {
+        printf("Nota no encontrada.\n");
+        return lista;
+    }
+    if (anterior == NULL)
+        lista = actual->sig;
+    else
+        anterior->sig = actual->sig;
+    
+    fprintf(arch, "Nota quitada: Alumno=%s Materia=%s\n", alumno, materia);
+    printf("Nota eliminada: %s - %s\n", alumno, materia);
+    free(actual);
+    return lista;
+}
+
+/* ====== Calcular promedio de un alumno en una materia ====== */
+float calcularPromedio(Nota *notas, char nombre[], char materia[]) {
+    float suma = 0;
+    int cantidad = 0;
+    
+    while (notas != NULL) {
+        if (strcmp(notas->alumno, nombre) == 0 && strcmp(notas->materia, materia) == 0) {
+            suma += notas->valor;
+            cantidad++;
+        }
+        notas = notas->sig;
+    }
+    
+    return (cantidad == 0) ? 0 : suma / cantidad;
+}
+
+/* ====== Copiar alumnos de la lista a un arreglo auxiliar ====== */
+int copiarAlumnosAArray(Alumno *lista, AlumnoConPromedio arr[]) {
+    int i = 0;
+    while (lista != NULL) {
+        strcpy(arr[i].nombre, lista->nombre);
+        strcpy(arr[i].materia, lista->materiaAlum);
+        arr[i].dni = lista->dni;
+        arr[i].promedio = 0;
+        lista = lista->sig;
+        i++;
+    }
+    return i;
+}
+
+/* ====== Ordenamiento burbuja por nombre (ascendente) ====== */
+void burbujaNombre(AlumnoConPromedio arr[], int n) {
+    AlumnoConPromedio tmp;
+    for (int i = 0; i < n - 1; i++)
+        for (int j = 0; j < n - i - 1; j++)
+            if (strcmp(arr[j].nombre, arr[j + 1].nombre) > 0) {
+                tmp = arr[j];
+                arr[j] = arr[j + 1];
+                arr[j + 1] = tmp;
+    }
+}
+
+/* ====== Ordenamiento burbuja por DNI (ascendente) ====== */
+void burbujaDNI(AlumnoConPromedio arr[], int n) {
+    AlumnoConPromedio tmp;
+    for (int i = 0; i < n - 1; i++)
+        for (int j = 0; j < n - i - 1; j++)
+            if (arr[j].dni > arr[j + 1].dni) {
+                tmp = arr[j];
+                arr[j] = arr[j + 1];
+                arr[j + 1] = tmp;
+    }
+}
+
+/* ====== Ordenamiento burbuja por promedio (descendente) ====== */
+void burbujaPromedios(AlumnoConPromedio arr[], int n) {
+    AlumnoConPromedio tmp;
+    for (int i = 0; i < n - 1; i++)
+        for (int j = 0; j < n - i - 1; j++)
+            if (arr[j].promedio < arr[j + 1].promedio) {
+                tmp = arr[j];
+                arr[j] = arr[j + 1];
+                arr[j + 1] = tmp;
+    }
+}
+
+/* ====== Búsqueda binaria por nombre (requiere burbujaNombre antes) ====== */
+int busquedaBinariaNombre(AlumnoConPromedio arr[], int n, char nombre[]) {
+    int ini = 0, fin = n - 1, medio;
+    while (ini <= fin) {
+        medio = (ini + fin) / 2;
+        int cmp = strcmp(nombre, arr[medio].nombre);
+        if (cmp == 0) return medio;
+        if (cmp < 0) fin = medio - 1;
+        else ini = medio + 1;
+    }
+    return -1;
+}
+
+/* ====== Búsqueda binaria por DNI (requiere burbujaDNI antes) ====== */
+int busquedaBinariaDNI(AlumnoConPromedio arr[], int n, int dni) {
+    int ini = 0, fin = n - 1, medio;
+    while (ini <= fin) {
+        medio = (ini + fin) / 2;
+        if (dni == arr[medio].dni) return medio;
+        if (dni < arr[medio].dni) fin = medio - 1;
+        else ini = medio + 1;
+    }
+    return -1;
+}
+
+/* ====== Buscar alumno por nombre o DNI usando búsqueda binaria ====== */
+void buscar(Alumno *lista, Nota *notas) {
+    if (lista == NULL) {
+        printf("No hay alumnos cargados.\n");
+        return;
+    }
+    
+    AlumnoConPromedio arr[100];
+    int total = copiarAlumnosAArray(lista, arr);
+    
+    int opcion;
+    printf("\nBuscar por:\n1. Nombre\n2. DNI\nOpción: ");
+    scanf("%d", &opcion);
+    
+    if (opcion == 1) {
+        char nombre[50];
+        printf("Ingrese el nombre del alumno: ");
+        scanf("%s", nombre);
+        burbujaNombre(arr, total);
+        int pos = busquedaBinariaNombre(arr, total, nombre);
+        if (pos != -1) {
+            arr[pos].promedio = calcularPromedio(notas, arr[pos].nombre, arr[pos].materia);
+            printf("\nResultado:\nNombre: %s\nDNI: %d\nMateria: %s\nPromedio: %.2f\n",
+                    arr[pos].nombre, arr[pos].dni, arr[pos].materia, arr[pos].promedio);
+        } else {
+            printf("Alumno no encontrado.\n");
+        }
+    } else if (opcion == 2) {
+        int dni;
+        printf("Ingrese el DNI del alumno: ");
+        scanf("%d", &dni);
+        burbujaDNI(arr, total);
+        int pos = busquedaBinariaDNI(arr, total, dni);
+        if (pos != -1) {
+            arr[pos].promedio = calcularPromedio(notas, arr[pos].nombre, arr[pos].materia);
+            printf("\nResultado:\nNombre: %s\nDNI: %d\nMateria: %s\nPromedio: %.2f\n",
+                    arr[pos].nombre, arr[pos].dni, arr[pos].materia, arr[pos].promedio);
+        } else {
+            printf("Alumno no encontrado.\n");
+        }
+    } else {
+        printf("Opción inválida.\n");
+    }
+}
+
+/* ====== Mostrar todos los alumnos ordenados por promedio (descendente) ====== */
+void mostrarPromediosOrdenados(Alumno *alumnos, Nota *notas) {
+    if (alumnos == NULL) {
+        printf("No hay alumnos cargados.\n");
+        return;
+    }
+    
+    AlumnoConPromedio arr[100];
+    int total = copiarAlumnosAArray(alumnos, arr);
+    
+    for (int i = 0; i < total; i++) {
+        arr[i].promedio = calcularPromedio(notas, arr[i].nombre, arr[i].materia);
+    }
+    
+    burbujaPromedios(arr, total);
+    
+    printf("\n====== Promedios ordenados (de mayor a menor) ======\n");
+    printf("%-20s | %-10s | %-15s | %-10s\n", "Nombre", "DNI", "Materia", "Promedio");
+    printf("---------------------------------------------------------------\n");
+    for (int i = 0; i < total; i++) {
+        printf("%-20s | %-10d | %-15s | %-10.2f\n",
+                arr[i].nombre, arr[i].dni, arr[i].materia, arr[i].promedio);
+    }
+    printf("====================================================\n");
+}
