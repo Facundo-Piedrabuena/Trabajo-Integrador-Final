@@ -1,28 +1,28 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #define GDE "arch.dat"
 
+//Struct de Materias
 typedef struct Materia {
 	char nombreM[50];
 	struct Materia *sig;
 } Materia;
-
+//Struct de Alumnos
 typedef struct Alumno {
 	char nombre[50];
 	int dni;
 	char materiaAlum[50];
 	struct Alumno *sig;
 } Alumno;
-
+//Struct de Notas
 typedef struct Nota {
 	char alumno[50];
 	char materia[50];
 	float valor;
 	struct Nota *sig;
 } Nota;
-
+//Struct de promedio
 typedef struct {
 	char nombre[50];
 	int dni;
@@ -101,7 +101,7 @@ void submenu(TipoSubmenu tipo, Materia **materias, Alumno **alumnos, Nota **nota
 		}
 	} while (opcion != 3);
 }
-
+//Funcion para agregar materias
 Materia* agregarMateria(Materia *lista) {
 	char nombreM[50];
 	printf("Ingrese nombre de la materia: ");
@@ -119,7 +119,7 @@ Materia* agregarMateria(Materia *lista) {
 	printf("Materia agregada: %s\n", nombreM);
 	return nuevo;
 }
-
+//Funcion para quitar materias
 Materia* quitarMateria(Materia *lista, Alumno **alumnos, Nota **notas) {
     char nombreM[50];
     printf("Ingrese nombre de la materia a quitar: ");
@@ -170,7 +170,7 @@ Materia* quitarMateria(Materia *lista, Alumno **alumnos, Nota **notas) {
     }
     return lista;
 }
-
+//Funcion para agregar alumnos
 Alumno* agregarAlumno(Alumno *lista, Materia *materias) {
 	Alumno *nuevo = malloc(sizeof(Alumno));
 	printf("Ingrese nombre del alumno: ");
@@ -213,7 +213,7 @@ Alumno* agregarAlumno(Alumno *lista, Materia *materias) {
 	printf("Alumno agregado: %s (%d) en %s\n", nuevo->nombre, nuevo->dni, nuevo->materiaAlum);
 	return nuevo;
 }
-
+//Funcion para quitar materias
 Alumno* quitarAlumno(Alumno *lista) {
 	char nombre[50], materia[50];
 	printf("Ingrese nombre del alumno a quitar: ");
@@ -240,7 +240,7 @@ Alumno* quitarAlumno(Alumno *lista) {
 	free(actual);
 	return lista;
 }
-
+//Funcion para agregar notas
 Nota* agregarNota(Nota *lista, Materia *materias, Alumno *alumnos) {
 	char alumno[50], materia[50];
 	float valor;
@@ -290,7 +290,7 @@ Nota* agregarNota(Nota *lista, Materia *materias, Alumno *alumnos) {
 	printf("Nota agregada: %s - %s - %.2f\n", alumno, materia, valor);
 	return nuevo;
 }
-
+//Funcion para quitar notas
 Nota* quitarNota(Nota *lista, Materia *materias, Alumno *alumnos) {
 	char alumno[50], materia[50];
 	printf("Ingrese nombre del alumno: ");
@@ -416,7 +416,7 @@ void mostrarPromediosOrdenados(Alumno *listaAlumnos, Nota *listaNotas) {
 	for (int i = 0; i < n; i++)
 		printf("%-20s %-10d %-20s %-10.2f\n", arr[i].nombre, arr[i].dni, arr[i].materia, arr[i].promedio);
 }
-
+//Funcion para mostrar el contenido cargado
 void mostrar(Materia *materias, Alumno *alumnos, Nota *notas) {
 	printf("\n========================= Mostrar =========================\n");
 	printf("%-20s %-20s %-10s %-10s\n\n", "Materia", "Alumno", "DNI", "Nota");
@@ -444,7 +444,7 @@ void mostrar(Materia *materias, Alumno *alumnos, Nota *notas) {
 	
 	printf("============================================================\n");
 }
-
+//Funcion para buscar un alumno por DNI o nombre
 void buscar(Alumno *listaAlumnos, Nota *listaNotas) {
 	int opcion;
 	printf("Buscar por:\n1) Nombre\n2) DNI\nOpción: ");
@@ -493,10 +493,10 @@ void buscar(Alumno *listaAlumnos, Nota *listaNotas) {
 		printf("Opción inválida.\n");
 	}
 }
-
+//Funcion para leer el archivo previamente creado
 void leerArchivo(FILE *arch, Materia **materias, Alumno **alumnos, Nota **notas) {
 	char tipo;
-	while (fscanf(arch, " %c", &tipo) != EOF) {
+	while (fscanf(arch, " %c", &tipo) != EOF) {                 //Se carga cada lista con los datos guardados
 		if (tipo == 'M') {
 			Materia *nuevo = malloc(sizeof(Materia));
 			fscanf(arch, " %49[^\n]", nuevo->nombreM);
@@ -521,7 +521,7 @@ void leerArchivo(FILE *arch, Materia **materias, Alumno **alumnos, Nota **notas)
 		fscanf(arch, "%*[^\n]\n"); // limpiar línea
 	}
 }
-
+//Funcion para guardar el archivo con sus cambios
 void guardarArchivo(FILE *arch, Materia *materias, Alumno *alumnos, Nota *notas) {
 	for (Materia *m = materias; m; m = m->sig)
 		fprintf(arch, "M %s\n", m->nombreM);
@@ -530,7 +530,7 @@ void guardarArchivo(FILE *arch, Materia *materias, Alumno *alumnos, Nota *notas)
 	for (Nota *n = notas; n; n = n->sig)
 		fprintf(arch, "N %s %s %.2f\n", n->alumno, n->materia, n->valor);
 }
-
+//Funciones para liberar memoria
 void liberarMaterias(Materia **lista) {
 	Materia *aux;
 	while (*lista) {
@@ -555,7 +555,7 @@ void liberarNotas(Nota **lista) {
 		free(aux);
 	}
 }
-
+//Funcion para pasar minusculas a mayusculas
 void aMayusculas(char s[]) {
 	for (int i = 0; s[i]; i++) {
 		if (s[i] >= 'a' && s[i] <= 'z') s[i] -= 32;
@@ -588,7 +588,7 @@ int existeDNI(Alumno *lista, int dni) {
     }
     return 0;
 }
-//funcion para verificar si la entrada de datos es de tipo entero
+//Funcion para verificar si la entrada de datos es de tipo entero
 int verificardigitos() {
     int num;
     if (scanf("%d", &num) != 1||num==0) {
@@ -598,14 +598,14 @@ int verificardigitos() {
     }
     return num; // correcto
 }
-
+//FUNCION MAIN
 int main() {
 	int opcion = 0;
 	Materia *listaMaterias = NULL;
 	Alumno *listaAlumnos = NULL;
 	Nota *listaNotas = NULL;
 	
-	FILE *arch = fopen(GDE, "r");
+	FILE *arch = fopen(GDE, "r");       //Se abre un archivo de texto para lectura
 	if (arch == NULL) {
 		printf("Archivo no encontrado. Se creará uno nuevo al guardar.\n");
 	} else {
