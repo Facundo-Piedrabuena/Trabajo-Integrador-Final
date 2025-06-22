@@ -36,7 +36,7 @@ typedef enum {MATERIA, ALUMNO, NOTA} TipoSubmenu;
 Materia* agregarMateria(Materia*);
 Materia* quitarMateria(Materia*, Alumno**, Nota**);
 Alumno* agregarAlumno(Alumno*, Materia*);
-Alumno* quitarAlumno(Alumno*);
+Alumno* quitarAlumno(Alumno*,Nota**);
 Nota* agregarNota(Nota*, Materia*, Alumno*);
 Nota* quitarNota(Nota*, Materia*, Alumno*);
 void mostrar(Materia*, Alumno*, Nota*);
@@ -91,7 +91,7 @@ void submenu(TipoSubmenu tipo, Materia **materias, Alumno **alumnos, Nota **nota
 			break;
 		case 2:
 			if (tipo == MATERIA) *materias = quitarMateria(*materias, alumnos, notas);
-			else if (tipo == ALUMNO) *alumnos = quitarAlumno(*alumnos);
+			else if (tipo == ALUMNO) *alumnos = quitarAlumno(*alumnos, notas);
 			else if (tipo == NOTA) *notas = quitarNota(*notas, *materias, *alumnos);
 			break;
 		case 3:
@@ -214,31 +214,43 @@ Alumno* agregarAlumno(Alumno *lista, Materia *materias) {
 	return nuevo;
 }
 //Funcion para quitar materias
-Alumno* quitarAlumno(Alumno *lista) {
-	char nombre[50], materia[50];
-	printf("Ingrese nombre del alumno a quitar: ");
-	scanf("%s", nombre);
-	aMayusculas(nombre);
-	printf("Ingrese materia: ");
-	scanf("%s", materia);
-	aMayusculas(materia);
-	
-	Alumno *actual = lista, *anterior = NULL;
-	while (actual && (strcmp(actual->nombre, nombre) != 0 || strcmp(actual->materiaAlum, materia) != 0)) {
-		anterior = actual;
-		actual = actual->sig;
-	}
-	if (!actual) {
-		printf("Alumno no encontrado en la materia.\n");
-		return lista;
-	}
-	
-	if (!anterior) lista = actual->sig;
-	else anterior->sig = actual->sig;
-	
-	printf("Alumno %s eliminado de %s.\n", actual->nombre, actual->materiaAlum);
-	free(actual);
-	return lista;
+Alumno* quitarAlumno(Alumno *lista, Nota **notas) {
+    char nombre[50], materia[50];
+    printf("Ingrese nombre del alumno a quitar: ");
+    scanf("%s", nombre);
+    aMayusculas(nombre);
+    printf("Ingrese materia: ");
+    scanf("%s", materia);
+    aMayusculas(materia);
+
+    Alumno *actual = lista, *anterior = NULL;           //Se busca y quita el alumno
+    while (actual && (strcmp(actual->nombre, nombre) != 0 || strcmp(actual->materiaAlum, materia) != 0)) {
+        anterior = actual;
+        actual = actual->sig;
+    }
+    if (!actual) {
+        printf("Alumno no encontrado en la materia.\n");
+        return lista;
+    }
+    if (!anterior) lista = actual->sig;
+    else anterior->sig = actual->sig;
+    printf("Alumno %s eliminado de %s.\n", actual->nombre, actual->materiaAlum);
+    free(actual);
+
+    Nota *n = *notas, *prevN = NULL;            //Quito todas las notas de esa materia
+    while (n) {
+        if (strcmp(n->alumno, nombre) == 0 && strcmp(n->materia, materia) == 0) {
+            Nota *borrar = n;
+            if (prevN) prevN->sig = n->sig;
+            else *notas = n->sig;
+            n = n->sig;
+            free(borrar);
+        } else {
+            prevN = n;
+            n = n->sig;
+        }
+    }
+    return lista;
 }
 //Funcion para agregar notas
 Nota* agregarNota(Nota *lista, Materia *materias, Alumno *alumnos) {
@@ -292,58 +304,59 @@ Nota* agregarNota(Nota *lista, Materia *materias, Alumno *alumnos) {
 }
 //Funcion para quitar notas
 Nota* quitarNota(Nota *lista, Materia *materias, Alumno *alumnos) {
-	char alumno[50], materia[50];
-	printf("Ingrese nombre del alumno: ");
-	scanf("%s", alumno);
-	aMayusculas(alumno);
-	printf("Ingrese materia: ");
-	scanf("%s", materia);
-	aMayusculas(materia);
-	
-	Alumno *a = alumnos;
-	int alumnoOK = 0;
-	while (a) {
-		if (strcmp(a->nombre, alumno) == 0 && strcmp(a->materiaAlum, materia) == 0) {
-			alumnoOK = 1;
-			break;
-		}
-		a = a->sig;
-	}
-	if (!alumnoOK) {
-		printf("Alumno no encontrado en la materia.\n");
-		return lista;
-	}
-	
-	Materia *m = materias;
-	int materiaOK = 0;
-	while (m) {
-		if (strcmp(m->nombreM, materia) == 0) {
-			materiaOK = 1;
-			break;
-		}
-		m = m->sig;
-	}
-	if (!materiaOK) {
-		printf("Materia no encontrada.\n");
-		return lista;
-	}
-	
-	Nota *actual = lista, *anterior = NULL;
-	while (actual && (strcmp(actual->alumno, alumno) != 0 || strcmp(actual->materia, materia) != 0)) {
-		anterior = actual;
-		actual = actual->sig;
-	}
-	if (!actual) {
-		printf("Nota no encontrada.\n");
-		return lista;
-	}
-	
-	if (!anterior) lista = actual->sig;
-	else anterior->sig = actual->sig;
-	
-	printf("Nota eliminada: %s - %s\n", alumno, materia);
-	free(actual);
-	return lista;
+    char alumno[50], materia[50];
+    float valor;
+    printf("Ingrese nombre del alumno: ");
+    scanf("%s", alumno);
+    aMayusculas(alumno);
+    printf("Ingrese materia: ");
+    scanf("%s", materia);
+    aMayusculas(materia);
+    printf("Ingrese valor de la nota a eliminar: ");
+    scanf("%f", &valor);
+    Alumno *a = alumnos;                //Se verifica que el alumno exista en esa materia
+    int alumnoOK = 0;
+    while (a) {
+        if (strcmp(a->nombre, alumno) == 0 && strcmp(a->materiaAlum, materia) == 0) {
+            alumnoOK = 1;
+            break;
+        }
+        a = a->sig;
+    }
+    if (!alumnoOK) {
+        printf("Alumno no encontrado en la materia.\n");
+        return lista;
+    }
+    Materia *m = materias;                      //Verifico que la materia exista
+    int materiaOK = 0;
+    while (m) {
+        if (strcmp(m->nombreM, materia) == 0) {
+            materiaOK = 1;
+            break;
+        }
+        m = m->sig;
+    }
+    if (!materiaOK) {
+        printf("Materia no encontrada.\n");
+        return lista;
+    }
+    Nota *actual = lista, *anterior = NULL;             //Busco la nota exacta
+    while (actual) {
+        if (strcmp(actual->alumno, alumno) == 0 && strcmp(actual->materia, materia) == 0 && actual->valor == valor) {
+            if (anterior == NULL) {                 //Si la encuentra se elimina
+                lista = actual->sig;
+            } else {
+                anterior->sig = actual->sig;
+            }
+            printf("Nota eliminada: %s - %s - %.2f\n", alumno, materia, valor);
+            free(actual);
+            return lista;
+            }
+        anterior = actual;
+        actual = actual->sig;
+    }
+    printf("No se encontró una nota con ese valor para ese alumno y materia.\n");
+    return lista;
 }
 //Funcion que calcula el promedio de todas las notas de una misma materia
 float calcularPromedio(Nota *notas, char nombre[], char materia[]) {
