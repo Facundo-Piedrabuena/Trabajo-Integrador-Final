@@ -292,59 +292,58 @@ Nota* agregarNota(Nota *lista, Materia *materias, Alumno *alumnos) {
 }
 //Funcion para quitar notas
 Nota* quitarNota(Nota *lista, Materia *materias, Alumno *alumnos) {
-    char alumno[50], materia[50];
-    float valor;
-    printf("Ingrese nombre del alumno: ");
-    scanf("%s", alumno);
-    aMayusculas(alumno);
-    printf("Ingrese materia: ");
-    scanf("%s", materia);
-    aMayusculas(materia);
-    printf("Ingrese valor de la nota a eliminar: ");
-    scanf("%f", &valor);
-    Alumno *a = alumnos;                //Se verifica que el alumno exista en esa materia
-    int alumnoOK = 0;
-    while (a) {
-        if (strcmp(a->nombre, alumno) == 0 && strcmp(a->materiaAlum, materia) == 0) {
-            alumnoOK = 1;
-            break;
-        }
-        a = a->sig;
-    }
-    if (!alumnoOK) {
-        printf("Alumno no encontrado en la materia.\n");
-        return lista;
-    }
-    Materia *m = materias;                      //Verifico que la materia exista
-    int materiaOK = 0;
-    while (m) {
-        if (strcmp(m->nombreM, materia) == 0) {
-            materiaOK = 1;
-            break;
-        }
-        m = m->sig;
-    }
-    if (!materiaOK) {
-        printf("Materia no encontrada.\n");
-        return lista;
-    }
-    Nota *actual = lista, *anterior = NULL;             //Busco la nota exacta
-    while (actual) {
-        if (strcmp(actual->alumno, alumno) == 0 && strcmp(actual->materia, materia) == 0 && actual->valor == valor) {
-            if (anterior == NULL) {                 //Si la encuentra se elimina
-                lista = actual->sig;
-            } else {
-                anterior->sig = actual->sig;
-            }
-            printf("Nota eliminada: %s - %s - %.2f\n", alumno, materia, valor);
-            free(actual);
-            return lista;
-            }
-        anterior = actual;
-        actual = actual->sig;
-    }
-    printf("No se encontró una nota con ese valor para ese alumno y materia.\n");
-    return lista;
+	char alumno[50], materia[50];
+	printf("Ingrese nombre del alumno: ");
+	scanf("%s", alumno);
+	aMayusculas(alumno);
+	printf("Ingrese materia: ");
+	scanf("%s", materia);
+	aMayusculas(materia);
+	
+	Alumno *a = alumnos;
+	int alumnoOK = 0;
+	while (a) {
+		if (strcmp(a->nombre, alumno) == 0 && strcmp(a->materiaAlum, materia) == 0) {
+			alumnoOK = 1;
+			break;
+		}
+		a = a->sig;
+	}
+	if (!alumnoOK) {
+		printf("Alumno no encontrado en la materia.\n");
+		return lista;
+	}
+	
+	Materia *m = materias;
+	int materiaOK = 0;
+	while (m) {
+		if (strcmp(m->nombreM, materia) == 0) {
+			materiaOK = 1;
+			break;
+		}
+		m = m->sig;
+	}
+	if (!materiaOK) {
+		printf("Materia no encontrada.\n");
+		return lista;
+	}
+	
+	Nota *actual = lista, *anterior = NULL;
+	while (actual && (strcmp(actual->alumno, alumno) != 0 || strcmp(actual->materia, materia) != 0)) {
+		anterior = actual;
+		actual = actual->sig;
+	}
+	if (!actual) {
+		printf("Nota no encontrada.\n");
+		return lista;
+	}
+	
+	if (!anterior) lista = actual->sig;
+	else anterior->sig = actual->sig;
+	
+	printf("Nota eliminada: %s - %s\n", alumno, materia);
+	free(actual);
+	return lista;
 }
 //Funcion que calcula el promedio de todas las notas de una misma materia
 float calcularPromedio(Nota *notas, char nombre[], char materia[]) {
@@ -395,7 +394,7 @@ void mostrarPromediosOrdenados(Alumno *listaAlumnos, Nota *listaNotas) {
 	int opcion;
 	printf("Ordenar promedios por:\n1) Nombre\n2) DNI\nOpción: ");
 	int digito=verificardigitos();
-    if (digito!=1||digito!=2){
+    if (digito!=1 && digito!=2){
         if (digito!=0){printf("\nError, ingrese una opcion: 1 o 2\n\n");}
         mostrarPromediosOrdenados(listaAlumnos,listaNotas);
     }opcion=digito;
@@ -419,38 +418,41 @@ void mostrarPromediosOrdenados(Alumno *listaAlumnos, Nota *listaNotas) {
 }
 //Funcion para mostrar el contenido cargado
 void mostrar(Materia *materias, Alumno *alumnos, Nota *notas) {
-	printf("\n========================= Mostrar =========================\n");
-	printf("%-20s %-20s %-10s %-10s\n\n", "Materia", "Alumno", "DNI", "Nota");
-	
-	for (Materia *m = materias; m; m = m->sig) {
-		int encontrado = 0;
-		for (Alumno *a = alumnos; a; a = a->sig) {
-			if (strcmp(a->materiaAlum, m->nombreM) == 0) {
-				encontrado = 1;
-				printf("%-20s %-20s %-10d ", m->nombreM, a->nombre, a->dni);
-				int notaEncontrada = 0;
-				for (Nota *n = notas; n; n = n->sig) {
-					if (strcmp(n->alumno, a->nombre) == 0 && strcmp(n->materia, m->nombreM) == 0) {
-						printf("%-10.2f\n", n->valor);
-						notaEncontrada = 1;
-						break;
-					}
-				}
-				if (!notaEncontrada) printf("%-10s\n", "-");
-			}
-		}
-		if (!encontrado)
-			printf("%-20s %-20s %-10s %-10s\n", m->nombreM, "-", "-", "-");
-	}
-	
-	printf("============================================================\n");
+    printf("\n========================= Mostrar =========================\n");
+    printf("%-20s %-20s %-10s %-10s\n\n", "Materia", "Alumno", "DNI", "Nota");
+    for (Materia *m = materias; m; m = m->sig) {
+        int encontradoMateria = 0;
+        for (Alumno *a = alumnos; a; a = a->sig) {
+            if (strcmp(a->materiaAlum, m->nombreM) == 0) {
+                encontradoMateria = 1;
+                int notaEncontrada = 0;
+                for (Nota *n = notas; n; n = n->sig) {
+                    if (strcmp(n->alumno, a->nombre) == 0 && strcmp(n->materia, m->nombreM) == 0) {
+                        printf("%-20s %-20s %-10d %-10.2f\n",
+                               m->nombreM, a->nombre, a->dni, n->valor);
+                        notaEncontrada = 1;
+                    }
+                }
+                if (!notaEncontrada) {
+                    printf("%-20s %-20s %-10d %-10s\n",
+                           m->nombreM, a->nombre, a->dni, "-");
+                }
+            }
+        }
+        if (!encontradoMateria) {
+            printf("%-20s %-20s %-10s %-10s\n",
+                   m->nombreM, "-", "-", "-");
+        }
+    }
+    printf("============================================================\n");
 }
 //Funcion para buscar un alumno por DNI o nombre
 void buscar(Alumno *listaAlumnos, Nota *listaNotas) {
 	int opcion;
 	printf("Buscar por:\n1) Nombre\n2) DNI\nOpción: ");
 	int digito=verificardigitos();
-    if (digito!=1||digito!=2){
+    if (digito!=1 && digito!=2){
+        printf("\ndigito:%d",digito);
         if (digito!=0){printf("\nError, ingrese una opcion: 1 o 2\n\n");}
         mostrarPromediosOrdenados(listaAlumnos,listaNotas);
     }opcion=digito;
